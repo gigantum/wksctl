@@ -9,6 +9,7 @@ import (
 	"io"
 	"io/ioutil"
 	"net/http"
+	"net/url"
 	"os"
 	"path/filepath"
 	"text/template"
@@ -277,8 +278,18 @@ func CreateSeedNodeSetupPlan(ctx context.Context, o *capeios.OS, params SeedNode
 		}
 	}
 
-	cniRsc := recipe.BuildCNIPlan(cni, manifests)
-	b.AddResource("install:cni", cniRsc, plan.DependOn("kubeadm:init"))
+	// cniRsc := recipe.BuildCNIPlan(cni, manifests)
+	// b.AddResource("install:cni", cniRsc, plan.DependOn("kubeadm:init"))
+	k8sver := "Q2xpZW50IFZlcnNpb246IHZlcnNpb24uSW5mb3tNYWpvcjoiMSIsIE1pbm9yOiIxNyIsIEdpdFZlcnNpb246InYxLjE3LjciLCBHaXRDb21taXQ6ImI0NDU1MTAyZWYzOTJiZjdkNTk0ZWY5NmI5N2E0Y2FhNzlkNzI5ZDkiLCBHaXRUcmVlU3RhdGU6ImFyY2hpdmUiLCBCdWlsZERhdGU6IjIwMjAtMDktMTVUMjI6NDU6NDJaIiwgR29WZXJzaW9uOiJnbzEuMTMuMTUiLCBDb21waWxlcjoiZ2MiLCBQbGF0Zm9ybToibGludXgvYW1kNjQifQpTZXJ2ZXIgVmVyc2lvbjogdmVyc2lvbi5JbmZve01ham9yOiIxIiwgTWlub3I6IjE2IiwgR2l0VmVyc2lvbjoidjEuMTYuMTEiLCBHaXRDb21taXQ6IjQzNjI1NGI3OThmNzcyYmNiOGU2N2RjZmUxMjJlNDY1MDBlZWIyNTQiLCBHaXRUcmVlU3RhdGU6ImNsZWFuIiwgQnVpbGREYXRlOiIyMDIwLTA2LTE3VDExOjQxOjI4WiIsIEdvVmVyc2lvbjoiZ28xLjEzLjkiLCBDb21waWxlcjoiZ2MiLCBQbGF0Zm9ybToibGludXgvYW1kNjQifQo="
+	cniManifestURL, err := url.Parse(fmt.Sprintf("https://cloud.weave.works/k8s/net?k8s-version=%s", k8sver))
+
+	b.AddResource(
+		"install-cni:apply-manifests",
+		&resource.KubectlApply{
+			ManifestURL: cniManifestURL,
+		},
+		plan.DependOn("kubeadm:init"),
+	)
 
 	// Add resources to apply the cluster API's CRDs so that Kubernetes
 	// understands objects like Cluster, Machine, etc.
